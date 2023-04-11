@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미니게임</title>
+    <link 
+        href="https://fonts.googleapis.com/css?family=Press+Start+2P" 
+        rel="stylesheet"
+    >
+    <style>
+                html{
+            overflow-y:hidden;
+        }
+        *{
+            font-family: 'Press Start 2P', cursive;
+        }
+        body{margin: 0px;}
+        #stage{
+            width: 2000px; height: 900px;
+            background-image: url(./images/game_bg4.jpg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #blind{
+            width: 100%; height: 100%;
+            background: black;
+            opacity:0.3;
+        }
+    </style>
+    <script src="./classes_Mario/GameObject.js"></script>
+    <script src="./classes_Mario/Mario.js"></script>
+    <script src="./classes_Mario/Brick.js"></script>
+    <script src="./classes_Mario/util.js"></script>
+    <script>
+        let stage;
+        let st;
+        let bgX=0; //배경 x축 초기값
+        let bgSpeed=2; //배경 속도
+        let mario; //주인공
+        let gameFlag=true;
+        let pauseFlag = false; 
+        let brick=[]; //장애물
+        let n=0;
+        let brickArray=[
+            [0,0,0,0,1,2,1,0,0,0,0,0,0],
+            [0,0,0,1,2,1,0,0,1,1,1,0,0],
+            [0,0,0,0,1,2,1,0,1,1,1,0,0],
+            [0,0,0,0,0,0,0,1,2,1,0,0,0],
+            [0,0,0,0,1,2,1,0,0,0,1,2,1],
+            [0,0,1,2,1,0,1,1,0,1,2,1,0],
+            [0,0,1,2,1,0,0,1,2,0,0,0,1],
+            [0,0,0,0,0,0,0,0,1,2,1,0,0],
+            [0,0,0,0,1,2,1,0,0,0,0,0,0],
+            [0,0,1,0,0,0,0,1,2,1,0,0,1],
+            [0,0,1,1,0,0,1,2,1,0,0,0,1],
+            [0,0,0,1,2,1,0,0,0,0,0,0,1],
+            [0,0,0,0,0,0,0,0,1,2,1,0,0],
+            [0,0,0,0,0,0,0,0,0,1,2,1,0],
+            [0,0,0,1,2,1,0,0,1,2,1,0,1],
+            [0,1,2,1,0,0,0,0,0,1,2,2,1],
+            [0,0,0,0,1,2,1,0,0,0,1,2,1],
+            [0,0,0,0,1,2,1,0,0,0,2,1,0],
+            [0,0,1,2,1,0,0,0,0,1,1,1,0],
+            [1,2,0,1,2,1,0,0,0,1,2,1,0],
+            [1,2,1,0,0,0,0,0,0,0,0,0,0],
+            [1,2,1,0,0,0,1,2,1,0,0,0,0],
+            [1,1,1,1,2,1,1,1,1,2,1,1,1],
+            [1,1,1,2,1,1,1,1,2,1,1,1,1],
+            [1,1,2,1,1,1,1,1,2,1,1,1,1],
+            [1,1,1,1,2,1,1,1,2,1,1,1,1],
+            [1,1,1,2,1,1,1,1,1,2,1,1,1],
+            [1,1,1,1,2,1,1,1,2,1,1,1,1],
+            [1,1,1,1,1,2,1,1,1,2,1,1,1],
+            [1,1,1,1,1,1,2,1,1,2,1,1,1],
+            [1,1,1,1,2,1,1,1,1,1,1,1,1],
+            [1,1,2,1,1,1,2,1,1,1,2,1,1],
+            [1,1,2,1,1,1,1,1,1,1,1,1,1],
+            [1,1,1,1,2,1,1,1,1,1,2,1,1]
+        ];
+        let die; //게임종료
+        let score; //점수
+        let miniScore=0;
+        let gast;
+
+
+        function bgEffect(){
+            bgX-=bgSpeed;
+            stage.style.backgroundPosition=bgX+"px 0px";
+            
+        }
+
+        //게임 시작화면
+        function gameStart(){
+            gast=document.createElement("div");
+            gast.style.width=1600+"px";
+            gast.style.height=800+"px";
+            gast.style.fontSize=50+"px";
+            gast.style.color="white";
+            gast.innerText="start/pause : B"
+            gast.style.position="absolute";
+            gast.style.left=500+"px";
+            gast.style.top=300+"px";
+
+            stage.appendChild(gast);
+
+        }
+
+        function gameStartPause(){
+            pauseFlag=!pauseFlag;
+
+            stage.removeChild(gast);
+
+        }
+
+        //장애물 이미지 불러오기
+        function createBrick3(){
+            let random = getRandomWithRange(0,brickArray.length-1);
+            if(gameFlag){
+                if(pauseFlag){
+                    //console.log(brickArray[random],random);
+                    for(let i=0;i<brickArray[random].length;i++){
+                        //constructor(container, src, x, y, width, height, velX, velY)
+                        if(brickArray[random][i] == 0){
+                            brick.push(new Brick(stage, "./images/벽돌.png",1000+n*150,i*80,80,80,-bgSpeed,0,0));      
+                        }else if(brickArray[random][i] == 2){
+                            brick.push(new Brick(stage, "./images/동전.png",1000+n*150,i*80,80,80,-bgSpeed,0,2));
+                        }                       
+                    }
+                }
+            }
+            n++;    
+            
+            setTimeout('createBrick3()',1000);
+        }   
+
+
+        //주인공 이미지 불러오기
+        function createHero(){
+            //constructor(container,src,x,y,width,height,velX,velY)
+            mario=new Mario(stage, "./images/supermario2.png",100,300,100,100,0,5);
+        }
+
+
+        //주인공 움직이기
+        function jump(){
+            mario.velY=-7;     
+        }
+
+
+        function gameLoop(){
+            if(gameFlag && pauseFlag){
+                bgEffect(); //배경 움직이기 효과
+                mario.tick();
+                mario.render();
+                
+                for(let i=0;i<brick.length;i++){
+                    brick[i].tick();
+                    brick[i].render();
+                }
+                
+            }
+            score.innerText="score : "+miniScore;
+
+
+            
+            st=setTimeout("gameLoop()",10); 
+        }
+
+
+        //점수올리기
+        function gameScore(){
+            score=document.createElement("div");
+            score.style.width=1000+"px";
+            score.style.height=80+"px";
+            score.style.fontSize=30+"px";
+            score.style.color="white";
+            score.innerText="score : "+miniScore;
+            score.style.position="absolute";
+            score.style.left=10+"px";
+            score.style.top=860+"px";
+
+            stage.appendChild(score);
+        }
+
+        //게임오버
+        function gameOver(){
+            die=document.createElement("div");
+            die.style.width=1600+"px";
+            die.style.height=800+"px";
+            die.style.fontSize=100+"px";
+            die.style.color="white";
+            die.innerText="GAME OVER";
+            die.style.position="absolute";
+            die.style.left=500+"px";
+            die.style.top=300+"px";
+
+            stage.appendChild(die);
+        }
+
+
+
+        function init(){
+            stage=document.getElementById("stage");
+            stage.style.height=900+"px";
+
+            gameStart();
+            createHero();
+            createBrick3();
+            gameScore();
+            gameLoop();
+
+            
+
+           //키보드 효과넣기
+            document.addEventListener("keydown",function(e){
+                console.log(e.keyCode);
+                switch(e.keyCode){
+                    case 32:jump();break;
+                    case 66:gameStartPause();break;
+                }
+            });
+        }
+
+        window.addEventListener("load",function(){
+            init();
+        });
+    </script>
+</head>
+<body>
+    <div id="stage">
+        <div id="blind"></div>
+    </div>    
+</body>
+</html>
